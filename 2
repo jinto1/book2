@@ -1,0 +1,235 @@
+CREATE TABLE IF NOT EXISTS person (
+   personId  INTEGER PRIMARY KEY AUTOINCREMENT,
+   gn        TEXT,
+   sn        TEXT,
+   birthday  DATE
+);
+
+CREATE TABLE IF NOT EXISTS personlog (
+   personlogId  INTEGER PRIMARY KEY AUTOINCREMENT,
+   timestamp    DATE,
+   action       TEXT,
+   personIdNew  INTEGER,
+   personIdOld  INTEGER,
+   gnNew        TEXT,
+   gnOld        TEXT,
+   snNew        TEXT,
+   snOld        TEXT,
+   birthdayNew  DATE,
+   birthdayOld  DATE
+);
+
+CREATE TABLE IF NOT EXISTS book (
+   bookId     INTEGER PRIMARY KEY AUTOINCREMENT,
+   title      TEXT,
+   published  DATE,
+   author     INTEGER
+);
+
+CREATE TABLE IF NOT EXISTS booklog (
+   booklogId     INTEGER PRIMARY KEY AUTOINCREMENT,
+   timestamp     DATE,
+   action        TEXT,
+   bookIdNew     INTEGER,
+   bookIdOld     INTEGER,
+   titleNew      TEXT,
+   titleOld      TEXT,
+   publishedOld  DATE,
+   publishedNew  DATE,
+   authorOld     INTEGER,
+   authorNew     INTEGER
+);
+
+
+-- Adds trigger to log inserts on table "person"
+CREATE TRIGGER IF NOT EXISTS person_insert AFTER INSERT ON person
+BEGIN
+   INSERT INTO
+      personlog (personIdNew,  personIdOld,  gnNew,  snNew,  birthdayNew,  action,   timestamp)
+      VALUES    (new.personId, new.personId, new.gn, new.sn, new.birthday, 'INSERT', DATETIME('NOW'));
+END;
+
+
+-- Adds trigger to log updates to table "person"
+CREATE TRIGGER IF NOT EXISTS person_update AFTER UPDATE ON person
+BEGIN
+   INSERT INTO
+      personlog (personIdNew,  gnNew,  snNew,  birthdayNew,  personIdOld,  gnOld,  snOld,  birthdayOld,  action,   timestamp)
+      VALUES    (new.personId, new.gn, new.sn, new.birthday, old.personId, old.gn, old.sn, old.birthday, 'UPDATE', DATETIME('NOW'));
+END;
+
+
+-- Adds trigger to log deletes from table "person"
+CREATE TRIGGER IF NOT EXISTS person_delete AFTER DELETE ON person
+BEGIN
+   INSERT INTO
+      personlog (personIdNew,  personIdOld,  gnOld,  snOld,  birthdayOld,  action,   timestamp)
+      VALUES    (old.personId, old.personId, old.gn, old.sn, old.birthday, 'DELETE', DATETIME('NOW'));
+END;
+
+
+-- Adds trigger to log inserts on table "book"
+CREATE TRIGGER IF NOT EXISTS book_insert AFTER INSERT ON book
+BEGIN
+   INSERT INTO
+      booklog (bookIdOld,  bookIdNew,  titleNew,  publishedNew,  authorNew,  action,   timestamp)
+      VALUES  (new.bookId, new.bookId, new.title, new.published, new.author, 'INSERT', DATETIME('NOW'));
+END;
+
+
+-- Adds trigger to log updates to table "book"
+CREATE TRIGGER IF NOT EXISTS book_update AFTER UPDATE ON book
+BEGIN
+   INSERT INTO
+      booklog (bookIdOld,  titleOld,  publishedOld,  authorOld,  bookIdNew,  titleNew,  publishedNew,  authorNew,  action,   timestamp)
+      VALUES  (old.bookId, old.title, old.published, old.author, new.bookId, new.title, new.published, new.author, 'UPDATE', DATETIME('NOW'));
+END;
+
+
+-- Adds trigger to log deletes from table "book"
+CREATE TRIGGER IF NOT EXISTS book_delete AFTER DELETE ON book
+BEGIN
+   INSERT INTO
+      booklog (bookIdNew,  bookIdOld,  titleOld,  publishedOld,  authorOld,  action,   timestamp)
+      VALUES  (old.bookId, old.bookId, old.title, old.published, old.author, 'DELETE', DATETIME('NOW'));
+END;
+
+
+-- Adds initial data to tables to set a few triggers
+INSERT INTO person (gn, sn) VALUES ('David', 'Syzdek');
+DELETE FROM person WHERE gn = 'David' AND sn = 'Syzdek';
+INSERT INTO book (title) VALUES ('My Book');
+DELETE FROM book WHERE title = 'My Book';
+   
+
+-- Adds sample data into table "person"
+INSERT INTO person(gn,sn)          VALUES("Russell",  "Janney");
+INSERT INTO person(gn,sn,birthday) VALUES("Louis",    "L'Amour",    date("1908-03-22"));
+INSERT INTO person(gn,sn,birthday) VALUES("Ken",      "Follett",    date("1949-06-05"));
+INSERT INTO person(gn,sn,birthday) VALUES("Alexandre","Dumas",      date("1802-07-24"));
+INSERT INTO person(gn,sn,birthday) VALUES("Ambrose",  "Bierce",     date("1842-06-24"));
+INSERT INTO person(gn,sn,birthday) VALUES("Douglas",  "Adams",      date("1952-03-11"));
+INSERT INTO person(gn,sn,birthday) VALUES("Victor",   "Hugo",       date("1802-02-26"));
+INSERT INTO person(gn,sn,birthday) VALUES("Karl",     "Marx",       date("1818-05-05"));
+INSERT INTO person(gn,sn,birthday) VALUES("Jacob",    "Grimm",      date("1785-01-04"));
+INSERT INTO person(gn,sn,birthday) VALUES("Jane",     "Langton",    date("1922-12-30"));
+INSERT INTO person(gn,sn,birthday) VALUES("L. M.",    "Montgomery", date("1874-11-30"));
+INSERT INTO person(gn,sn,birthday) VALUES("William",  "Shakespeare",date("1564-04-26"));
+INSERT INTO person(gn,sn,birthday) VALUES("Mark",     "Twain",      date("1835-11-30"));
+
+
+-- Adds sample data into table "book"
+INSERT INTO book (title, published, author) VALUES (
+   "The Miracle of the Bells",
+   date("1946-06"),
+   (SELECT personId FROM person WHERE gn = "Russell" and sn = "Janney"));
+INSERT INTO book (title, published, author) VALUES (
+   "The Walking Drum",
+   date("1984-05-01"),
+   (SELECT personId FROM person WHERE gn = "Louis" and sn = "L'Amour"));
+INSERT INTO book (title, published, author) VALUES (
+   "The Pillars of the Earth",
+   date("1989-01-01"),
+   (SELECT personId FROM person WHERE gn = "Ken" and sn = "Follett"));
+INSERT INTO book (title, published, author) VALUES (
+   "The Count of Monte Cristo",
+   date("1846-01-01"),
+   (SELECT personId FROM person WHERE gn = "Alexandre" and sn = "Dumas"));
+INSERT INTO book (title, published, author) VALUES (
+   "The Devils Dictionary",
+   date("1911-01-01"),
+   (SELECT personId FROM person WHERE gn = "Ambrose" and sn = "Bierce"));
+INSERT INTO book (title, published, author) VALUES (
+   "The Hitchhiker's Guide to the Galaxy",
+   date("1979-10-12"),
+   (SELECT personId FROM person WHERE gn = "Douglas" and sn = "Adams"));
+INSERT INTO book (title, published, author) VALUES (
+   "The Hunchback of Notre Dame",
+   date("1831-01-14"),
+   (SELECT personId FROM person WHERE gn = "Victor" and sn = "Hugo"));
+INSERT INTO book (title, published, author) VALUES (
+   "Manifesto of the Communist Party",
+   date("1848-02-21"),
+   (SELECT personId FROM person WHERE gn = "Karl" and sn = "Marx"));
+INSERT INTO book (title, published, author) VALUES (
+   "The German Ideology",
+   date("1932-01-01"),
+   (SELECT personId FROM person WHERE gn = "Karl" and sn = "Marx"));
+INSERT INTO book (title, author) VALUES (
+   "Snow White",
+   (SELECT personId FROM person WHERE gn = "Karl" and sn = "Marx"));
+INSERT INTO book (title, published, author) VALUES (
+   "Les Miserables",
+   date("1862-01-01"),
+   (SELECT personId FROM person WHERE gn = "Victor" and sn = "Hugo"));
+INSERT INTO book (title, published, author) VALUES (
+   "The Fledgling",
+   date("1980-01-01"),
+   (SELECT personId FROM person WHERE gn = "Jane" and sn = "Langton"));
+INSERT INTO book (title, published, author) VALUES (
+   "Anne of Green Gables",
+   date("1908-06-01"),
+   (SELECT personId FROM person WHERE gn = "L. M." and sn = "Montgomery"));
+INSERT INTO book (title, published, author) VALUES (
+   "The Merchant of Venice",
+   date("1598-01-01"),
+   (SELECT personId FROM person WHERE gn = "William" and sn = "Shakespeare"));
+INSERT INTO book (title, published, author) VALUES (
+   "Much Ado About Nothing",
+   date("1599-01-01"),
+   (SELECT personId FROM person WHERE gn = "William" and sn = "Shakespeare"));
+INSERT INTO book (title, published, author) VALUES (
+   "Extracts from Adam's Diary",
+   date("1904-01-01"),
+   (SELECT personId FROM person WHERE gn = "Mark" and sn = "Twain"));
+INSERT INTO book (title, published, author) VALUES (
+   "What is Man?",
+   date("1906-01-01"),
+   (SELECT personId FROM person WHERE gn = "Mark" and sn = "Twain"));
+
+
+-- Example queries
+SELECT * FROM personlog;
+SELECT * FROM booklog;
+SELECT sn, gn, birthday FROM person ORDER BY birthday;
+SELECT book.published, book.title, person.gn, person.sn
+   FROM person
+   INNER JOIN book
+   ON book.author=person.personId
+   WHERE book.title LIKE '%of%'
+   ORDER BY book.published;
+
+
+-- Example ROLLBACK (Does not allow Nesting)
+BEGIN;
+   DELETE FROM book WHERE title LIKE '%White%';
+ROLLBACK;
+
+BEGIN;
+   UPDATE book
+      SET author = (SELECT personId FROM person WHERE sn = "Grimm")
+      WHERE title LIKE '%White%';
+END;
+
+
+-- Example of INNER JOIN
+SELECT book.title, person.gn, person.sn FROM book
+   INNER JOIN person
+   ON book.author = person.personId
+   WHERE person.gn = 'Karl' AND person.sn = 'Marx';
+
+
+-- Example SAVEPOINT (Allows Nesting)
+SAVEPOINT karl_marx;
+   SAVEPOINT karl_marx_book;
+      DELETE FROM book WHERE title = 'Manifesto of the Communist Party';
+      DELETE FROM book WHERE title = 'The German Ideology';
+   RELEASE SAVEPOINT karl_marx_book;
+   -- Hmm, There might be some books by Mr. Marx
+   -- left. I want to make sure I delete them all.
+   ROLLBACK TO SAVEPOINT karl_marx;
+   DELETE FROM book
+      WHERE author =
+         (SELECT personId FROM person WHERE gn = 'Karl' AND sn = 'Marx');
+   DELETE FROM person WHERE gn = 'Karl' AND sn = 'Marx';
+RELEASE karl_marx;
